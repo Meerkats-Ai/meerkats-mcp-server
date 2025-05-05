@@ -16,6 +16,9 @@ import {
 import logger from './utils/logger.js';
 import { formatError } from './utils/errorCodes.js';
 
+// Note: All logging is redirected to stderr (console.error) to ensure visibility
+// when the server is connected via stdio protocol, as stdout is used for MCP communication
+
 class MeerkatsServer {
   private server: Server;
 
@@ -135,7 +138,7 @@ class MeerkatsServer {
   async run() {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
-    console.error('Meerkats.ai MCP server running on stdio');
+    logger.info('Meerkats.ai MCP server running on stdio');
   }
 }
 

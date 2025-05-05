@@ -94,14 +94,6 @@ export interface ScrapeResult {
 
 // Main function to call the scraper engine
 export const scraperEngineCall = async (payload: ScrapeRequest, retry = 0): Promise<ScrapeResult> => {
-    const isTest = false;
-    if (isTest) {
-        return {
-            status: true,
-            markdown: 'ok'
-        };
-    }
-    
     const connectionsObj = await getSystemConnection(['SCRAPPER_CALLBACK_API_URL', 'SCRAPPER_API_URL', 'MEERKATS_API_KEY']);
     const customUrl = await getConnectionByName('SCRAPPER_API_URL', payload.callback?.userId);
     
@@ -141,8 +133,8 @@ export const scraperEngineCall = async (payload: ScrapeRequest, retry = 0): Prom
     
     const startTime = Date.now();
     const timeout = shouldApplyTimeout ? 65000 : 300000;
-    console.log({ timeout });
-    
+    logger.info('Timeout set to', { timeout });
+    logger.info(JSON.stringify(apiPayload, null, 2));
     return axios
         .post(apiUrl, apiPayload, {
             headers: {
@@ -156,8 +148,8 @@ export const scraperEngineCall = async (payload: ScrapeRequest, retry = 0): Prom
         .then(async (res: any) => {
             const endTime = Date.now();
             const diff = endTime - startTime;
-            console.log('Scrape engine call time', diff / 1000);
-            console.log(`Scrape engine call response`, res.status);
+            logger.info('Scrape engine call time', diff / 1000);
+            logger.info(`Scrape engine call response`, res.status);
             
             if (res.status == 200 && res.data) {
                 const toreturn = {
@@ -179,16 +171,16 @@ export const scraperEngineCall = async (payload: ScrapeRequest, retry = 0): Prom
             const errorCode = error?.response?.status;
             const errorText = error?.response?.statusText;
 
-            console.log(`Scrape engine call response`, { errorCode, errorText, isForbidden, retry });
+            logger.info(`Scrape engine call response`, { errorCode, errorText, isForbidden, retry });
             if (isForbidden && retry < 3) {
-                console.log(`Scrape engine call response isForbidden`);
+                logger.info(`Scrape engine call response isForbidden`);
                 await new Promise((resolve) => setTimeout(resolve, 10000));
                 return scraperEngineCall(payload, retry + 1);
             }
             
             const endTime = Date.now();
             const diff = endTime - startTime;
-            console.log('Scrape engine call time', diff / 1000);
+            logger.info('Scrape engine call time', diff / 1000);
             logger.error('error', errorCode);
             return { status: false, error: `ERR_0002: Scrape engine failed ${error?.messsage ?? errorCode}`, shouldRetry: true };
         });
@@ -249,8 +241,9 @@ export const ScrapeUrlReturnMarkdown = async (url?: string, query?: string,  wai
 
 // Function to search Google using the Meerkats agent
 export const WebSearch = async (query: string): Promise<any> => {
-    query = query ? query.replace(/"/g, '') : '';
-    return ScrapeUrlReturnMarkdown(undefined, query, 0);
+    query = (query ?? '').replace(/['"]/g, '');
+    logger.info('query', query);
+    return ScrapeUrlReturnMarkdown('https://www.meerkats.ai', query, 0);
 };
 
 // Function to scrape a URL (wrapper around scraperEngineCall)
