@@ -96,17 +96,17 @@ export interface ScrapeResult {
 export const scraperEngineCall = async (payload: ScrapeRequest, retry = 0): Promise<ScrapeResult> => {
     const connectionsObj = await getSystemConnection(['SCRAPPER_CALLBACK_API_URL', 'SCRAPPER_API_URL', 'MEERKATS_API_KEY']);
     const customUrl = await getConnectionByName('SCRAPPER_API_URL', payload.callback?.userId);
-    
+
     if (!connectionsObj.MEERKATS_API_KEY) {
         return { status: false, error: formatError(ErrorCode.WEB_MISSING_CREDENTIALS, 'API key is required').error };
     }
-    
+
     const isGoogleMaps = payload?.url?.includes('.google.com/maps');
     const isLinkedin = payload?.url?.startsWith('https://www.linkedin.com') || payload?.url?.startsWith('https://linkedin.com');
     const shouldApplyTimeout = !isGoogleMaps && !isLinkedin;
-    
+
     const apiUrl = customUrl ? `${customUrl}/api/scraper/scrape` : `${connectionsObj.SCRAPPER_API_URL}/api/scraper/scrape`;
-    
+
     let apiPayload: ScrapeRequest = {
         ...payload,
         callback: {
@@ -114,7 +114,7 @@ export const scraperEngineCall = async (payload: ScrapeRequest, retry = 0): Prom
             scrapperCallbackUrl: connectionsObj.SCRAPPER_CALLBACK_API_URL
         }
     };
-    
+
     if (customUrl) {
         apiPayload = {
             ...apiPayload,
@@ -124,13 +124,13 @@ export const scraperEngineCall = async (payload: ScrapeRequest, retry = 0): Prom
             }
         };
     }
-    
+
     if (apiPayload.pageOptions?.waitForMs) {
         let wait = apiPayload.pageOptions.waitForMs;
         wait = wait ? (isNaN(parseInt(wait.toString())) ? 0 : parseInt(wait.toString())) : 0;
         apiPayload.pageOptions.waitForMs = wait;
     }
-    
+
     const startTime = Date.now();
     const timeout = shouldApplyTimeout ? 65000 : 300000;
     logger.info('Timeout set to', { timeout });
@@ -149,8 +149,14 @@ export const scraperEngineCall = async (payload: ScrapeRequest, retry = 0): Prom
             const diff = endTime - startTime;
             logger.info('Scrape engine call time', diff / 1000);
             logger.info(`Scrape engine call response`, res.status);
-            
+
             if (res.status == 200 && res.data) {
+                if (res.data.status === false && retry < 3) {
+                    logger.info(`Scrape engine call response status false retrying`, retry);
+                    await new Promise((resolve) => setTimeout(resolve, 5000));
+                    return scraperEngineCall(payload, retry + 1);
+
+                }
                 const toreturn = {
                     ...res.data,
                     duration: diff / 1000
@@ -176,7 +182,7 @@ export const scraperEngineCall = async (payload: ScrapeRequest, retry = 0): Prom
                 await new Promise((resolve) => setTimeout(resolve, 10000));
                 return scraperEngineCall(payload, retry + 1);
             }
-            
+
             const endTime = Date.now();
             const diff = endTime - startTime;
             logger.info('Scrape engine call time', diff / 1000);
@@ -186,15 +192,15 @@ export const scraperEngineCall = async (payload: ScrapeRequest, retry = 0): Prom
 };
 
 // Function to scrape a URL and return markdown content
-export const ScrapeUrlReturnMarkdown = async (url?: string, query?: string,  wait?: number): Promise<LgResult> => {
+export const ScrapeUrlReturnMarkdown = async (url?: string, query?: string, wait?: number): Promise<LgResult> => {
     if (!url && !query) {
         return { error: formatError(ErrorCode.WEB_INVALID_URL, 'Invalid URL format').error, status: false };
     }
-    
+
     if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
         url = `https://${url}`;
     }
-    
+
     try {
         const payload: ScrapeRequest = {
             url,
@@ -204,7 +210,7 @@ export const ScrapeUrlReturnMarkdown = async (url?: string, query?: string,  wai
             },
             instant: true
         };
-        
+
         const engineResult: ScrapeResult = await scraperEngineCall(payload);
         if (engineResult.status === false) {
             return engineResult;
@@ -214,12 +220,12 @@ export const ScrapeUrlReturnMarkdown = async (url?: string, query?: string,  wai
         if (data.status === false || data.error) {
             return { error: formatError(ErrorCode.WEB_SCRAPING_FAILED, data.error || 'Scraping failed').error, status: false };
         }
-        
+
         if (data?.markdown) {
             let md = data.markdown.replace(/---/g, '');
             return { ...data, markdown: md, result: md, status: true };
         }
-        
+
         return { error: formatError(ErrorCode.WEB_SCRAPING_FAILED, 'No content found').error, status: false };
     } catch (error: unknown) {
         const scraperError: ScraperError = {
