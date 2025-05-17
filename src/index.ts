@@ -15,6 +15,7 @@ import {
 
 import logger from './utils/logger.js';
 import { formatError } from './utils/errorCodes.js';
+import { parse } from 'path';
 
 // Note: All logging is redirected to stderr (console.error) to ensure visibility
 // when the server is connected via stdio protocol, as stdout is used for MCP communication
@@ -36,7 +37,7 @@ class MeerkatsServer {
     );
 
     this.setupToolHandlers();
-    
+
     // Error handling
     this.server.onerror = (error) => console.error('[MCP Error]', error);
     process.on('SIGINT', async () => {
@@ -89,9 +90,12 @@ class MeerkatsServer {
         const args = request.params.arguments ?? {};
         const url: any = args.url;
         const query: any = args.query;
+        logger.info(`Executing tool:`, args);
         switch (request.params.name) {
           case 'scrape_url': {
-            const result = await ScrapeUrlReturnMarkdown(url);
+            let wait: any = args.wait
+            wait = wait ? parseInt(wait ?? '0') : 0;
+            const result = await ScrapeUrlReturnMarkdown(url, query, wait);
             return {
               content: [
                 {

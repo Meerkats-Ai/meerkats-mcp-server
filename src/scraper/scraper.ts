@@ -134,6 +134,7 @@ export const scraperEngineCall = async (payload: ScrapeRequest, retry = 0): Prom
     const startTime = Date.now();
     const timeout = shouldApplyTimeout ? 65000 : 300000;
     logger.info('Timeout set to', { timeout });
+    logger.info('Scrape engine call payload', apiPayload);
     return axios
         .post(apiUrl, apiPayload, {
             headers: {
@@ -208,7 +209,7 @@ export const ScrapeUrlReturnMarkdown = async (url?: string, query?: string, wait
             pageOptions: {
                 waitForMs: wait ? wait * 1000 : 0,
             },
-            instant: true
+            instant: wait ? false : true
         };
 
         const engineResult: ScrapeResult = await scraperEngineCall(payload);
