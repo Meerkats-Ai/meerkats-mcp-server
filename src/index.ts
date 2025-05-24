@@ -226,7 +226,7 @@ class MeerkatsServer {
               content: [
                 {
                   type: 'text',
-                  text: isValid.data.exists ? `Email: ${email} is valid` : `Email: ${email} is not valid`,
+                  text: isValid.exists ? `Email: ${email} is valid` : `Email: ${email} is not valid`,
                 },
               ],
               isError: false,
@@ -245,7 +245,7 @@ class MeerkatsServer {
             emails = emails.map((email: any) => `${email}@${domain}`)
             logger.info(`Emails to verify:`, emails);
             let result = await Promise.all(emails.map((email: any) => verifyEmail(email, fromEmail)));
-            result = result.filter((email: any) => email.data.exists).map((email: any) => email.data.email);
+            result = result.filter((email: any) => email.exists).map((email: any) => email.email);
             return {
               content: [
                 {
