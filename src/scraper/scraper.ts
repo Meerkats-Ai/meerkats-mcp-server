@@ -5,138 +5,47 @@ import { ErrorCode, formatError } from '../utils/errorCodes.js';
 import { logError, ScraperError } from '../utils/errorLogger.js';
 import { LgResult } from '../interface.js';
 
-// Interfaces for scraper operations
-export interface GoogleSearchResult {
-    title: string;
-    link: string;
-    snippet: string;
-}
-
-export interface GoogleMapsSearchResult {
-    title: string;
-    address: string;
-    rating: string;
-    reviews: string;
-    link: string;
-    snippet: string;
-    phone: string;
-    website: string;
-    hours: string;
-    photos: string;
-    directions: string;
-}
-
-export interface CrawlerOptions {
-    limit?: number;
-    maxDepth?: number;
-    useSitemap?: boolean;
-    allowBackwardsLinks?: boolean;
-    excludePaths?: string[];
-    includeOnlyPaths?: string[];
-}
-
 export interface PageOptions {
     excludeTags?: string[];
     includeOnlyTags?: string[];
     waitForMs?: number;
     extractMainContentOnly?: boolean;
     includeHtmlContent?: boolean;
-    includePageLinks?: boolean;
-    isSearch?: boolean;
-    scrollToBottom?: boolean;
     captureScreenshot?: boolean;
-    pages?: number;
-    isProxyRequired?: boolean;
-    rowExpander?: boolean;
-    country?: string;
-    state?: string;
-    city?: string;
     timeout?: number;
-    companies?: string[];
-    innerTextOnly?: boolean;
-}
-
-export interface CallbackParams {
-    scrapperCallbackUrl?: string;
-    userId?: string;
-    cellId?: string;
-    tableId?: string;
-    rowId?: string;
-    batchId?: string;
 }
 
 export interface ScrapeRequest {
     url?: string;
     pageOptions?: PageOptions;
-    callback?: CallbackParams;
-    cookies?: any;
-    proxy_url?: string;
     query?: string;
     instant?: boolean;
 }
 
-export interface link {
-    url: string | null;
-    text: string | null;
-}
-
 export interface ScrapeResult {
     status: boolean;
-    serpData?: GoogleSearchResult[];
     markdown?: string;
     html?: string;
     error?: string;
-    links?: link[];
-    shouldRetry?: boolean;
-    post?: any;
-    posts?: any;
 }
 
 // Main function to call the scraper engine
 export const scraperEngineCall = async (payload: ScrapeRequest, retry = 0): Promise<ScrapeResult> => {
     const connectionsObj = await getSystemConnection(['SCRAPPER_CALLBACK_API_URL', 'SCRAPPER_API_URL', 'MEERKATS_API_KEY']);
-    const customUrl = await getConnectionByName('SCRAPPER_API_URL', payload.callback?.userId);
-
     if (!connectionsObj.MEERKATS_API_KEY) {
         return { status: false, error: formatError(ErrorCode.WEB_MISSING_CREDENTIALS, 'API key is required').error };
     }
 
     const isGoogleMaps = payload?.url?.includes('.google.com/maps');
-    const isLinkedin = payload?.url?.startsWith('https://www.linkedin.com') || payload?.url?.startsWith('https://linkedin.com');
-    const shouldApplyTimeout = !isGoogleMaps && !isLinkedin;
+   const shouldApplyTimeout = !isGoogleMaps
 
-    const apiUrl = customUrl ? `${customUrl}/api/scraper/scrape` : `${connectionsObj.SCRAPPER_API_URL}/api/scraper/scrape`;
-
-    let apiPayload: ScrapeRequest = {
-        ...payload,
-        callback: {
-            ...payload.callback,
-            scrapperCallbackUrl: connectionsObj.SCRAPPER_CALLBACK_API_URL
-        }
-    };
-
-    if (customUrl) {
-        apiPayload = {
-            ...apiPayload,
-            pageOptions: {
-                ...apiPayload.pageOptions,
-                isProxyRequired: true
-            }
-        };
-    }
-
-    if (apiPayload.pageOptions?.waitForMs) {
-        let wait = apiPayload.pageOptions.waitForMs;
-        wait = wait ? (isNaN(parseInt(wait.toString())) ? 0 : parseInt(wait.toString())) : 0;
-        apiPayload.pageOptions.waitForMs = wait;
-    }
-
+    const apiUrl = `${connectionsObj.SCRAPPER_API_URL}/api/scraper/scrape`;
     const startTime = Date.now();
     const timeout = shouldApplyTimeout ? 65000 : 300000;
     logger.info('Timeout set to', { timeout });
-    logger.info('Scrape engine call payload', apiPayload);
+    logger.info('Scrape engine call payload', payload);
     return axios
-        .post(apiUrl, apiPayload, {
+        .post(apiUrl, payload, {
             headers: {
                 'X-API-Key': connectionsObj.MEERKATS_API_KEY ?? '',
                 'X-API-connection': 'abc',

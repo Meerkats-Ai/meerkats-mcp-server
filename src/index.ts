@@ -13,9 +13,10 @@ import {
   WebSearch,
 } from './scraper/scraper.js';
 
+import catchAllController from './controllers/catchAll.controller.js';
+const { guessEmail, verifyEmail } = catchAllController;
+
 import logger from './utils/logger.js';
-import { formatError } from './utils/errorCodes.js';
-import { parse } from 'path';
 
 // Note: All logging is redirected to stderr (console.error) to ensure visibility
 // when the server is connected via stdio protocol, as stdout is used for MCP communication
@@ -50,6 +51,72 @@ class MeerkatsServer {
     this.server.setRequestHandler(ListToolsRequestSchema, async () => ({
       tools: [
         {
+          name: 'verifyEmail',
+          description: 'Verify if an email address is valid and active using SMTP verification.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              email: {
+                type: 'string',
+                description: 'Email address to verify',
+              },
+              fromEmail: {
+                type: 'string',
+                description: 'Email address to use as the sender in SMTP verification (optional)',
+              },
+            },
+            required: ['email'],
+          },
+        },
+        {
+          name: 'generateSupportEmails',
+          description: 'generate group of support email addresses are valid and active at a domain. Checks common group email patterns.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              emails: {
+                type: 'string',
+                description: 'List of email prefixes to check, separated by commas (optional)',
+              },
+              domain: {
+                type: 'string',
+                description: 'Domain of the group email addresses',
+              },
+              fromEmail: {
+                type: 'string',
+                description: 'Email address to use as the sender in SMTP verification (optional)',
+              },
+            },
+            required: ['domain'],
+          },
+        },
+        {
+          name: 'guessEmail',
+          description: 'Guess an email address based on name and domain using common email patterns.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              firstName: {
+                type: 'string',
+                description: 'First name of the person',
+              },
+              lastName: {
+                type: 'string',
+                description: 'Last name of the person',
+              },
+              domain: {
+                type: 'string',
+                description: 'Company domain name',
+              },
+              fromEmail: {
+                type: 'string',
+                description: 'Email address to use as the sender in SMTP verification (optional)',
+              },
+            },
+            required: ['firstName', 'lastName', 'domain'],
+          },
+        },
+        {
           name: 'scrape_url',
           description: 'Scrape a URL and return the content as markdown',
           inputSchema: {
@@ -59,10 +126,42 @@ class MeerkatsServer {
                 type: 'string',
                 description: 'URL to scrape',
               },
-              wait: {
+              formats: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                  enum: [
+                    'markdown',
+                    'html',
+                  ],
+                },
+                default: ['markdown'],
+                description: "Content formats to extract (default: ['markdown'])",
+              },
+              onlyMainContent: {
+                type: 'boolean',
+                description:
+                  'Extract only the main content, filtering out navigation, footers, etc.',
+              },
+              includeTags: {
+                type: 'array',
+                items: { type: 'string' },
+                description: 'HTML tags to specifically include in extraction',
+              },
+              excludeTags: {
+                type: 'array',
+                items: { type: 'string' },
+                description: 'HTML tags to exclude from extraction',
+              },
+              waitFor: {
                 type: 'number',
-                description: 'Time to wait in seconds before scraping (optional)',
-              }
+                description: 'Time in milliseconds to wait for dynamic content to load',
+              },
+              timeout: {
+                type: 'number',
+                description:
+                  'Maximum time in milliseconds to wait for the page to load',
+              },
             },
             required: ['url'],
           },
@@ -116,6 +215,62 @@ class MeerkatsServer {
                 },
               ],
               isError: !result.status,
+            };
+          }
+          case 'verifyEmail': {
+            const email = args.email as string;
+            const fromEmail = (args.fromEmail as string) || "test@example.com"; // Provide a default value
+            const isValid = await verifyEmail(email, fromEmail);
+            logger.info(`Email verification result:`, isValid);
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: isValid.data.exists ? `Email: ${email} is valid` : `Email: ${email} is not valid`,
+                },
+              ],
+              isError: false,
+            };
+          }
+          case 'generateSupportEmails': {
+            let emails: any = args.emails as string;
+            emails = emails ? emails.split(',') : [];
+            emails = emails.map((email: any) => email.trim());
+            const domain = args.domain as string;
+            const fromEmail = (args.fromEmail as string) || `noreply@${domain}`;
+            // const result = await verifyGroupEmail(emails, domain, fromEmail);
+            const alreadyEmails = ['info', 'admin', 'sales', 'support', 'hello',  'contact', 'help', 'service','billing','marketing']
+            emails = emails.concat(alreadyEmails)
+            emails= [...new Set(emails)]
+            emails = emails.map((email: any) => `${email}@${domain}`)
+            logger.info(`Emails to verify:`, emails);
+            let result = await Promise.all(emails.map((email: any) => verifyEmail(email, fromEmail)));
+            result = result.filter((email: any) => email.data.exists).map((email: any) => email.data.email);
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify(result),
+                },
+              ],
+              isError: false,
+            };
+          }
+          case 'guessEmail': {
+            const firstName = args.firstName as string;
+            const lastName = args.lastName as string;
+            const domain = args.domain as string;
+            const fromEmail = (args.fromEmail as string) || undefined;
+            const guessedEmail = await guessEmail({ firstName, lastName, domain, fromEmail });
+
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify(guessedEmail),
+                },
+              ],
+              isError: false,
             };
           }
           default:
