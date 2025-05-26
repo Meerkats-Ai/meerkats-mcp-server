@@ -2,8 +2,8 @@ import axios from 'axios';
 import logger from '../utils/logger.js';
 
 // Email service API endpoint
-// const EMAIL_SERVICE_URL = 'http://34.46.80.154/api/email';
-const EMAIL_SERVICE_URL = 'http://localhost:3009/api/email';
+const EMAIL_SERVICE_URL = 'http://34.46.80.154/api/email';
+// const EMAIL_SERVICE_URL = 'http://localhost:3009/api/email';
 const API_KEY = 'jhfgkjghtucvfg'; // API key for the email service
 
 /**

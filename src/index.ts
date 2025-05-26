@@ -16,6 +16,9 @@ import {
 import catchAllController from './controllers/catchAll.controller.js';
 const { guessEmail, verifyEmail, isDomainCatchAll, domainMxRecords } = catchAllController;
 
+import googleController from './controllers/google.controller.js';
+const { GoogleSerp, GoogleMap } = googleController;
+
 import logger from './utils/logger.js';
 
 // Note: All logging is redirected to stderr (console.error) to ensure visibility
@@ -208,11 +211,50 @@ class MeerkatsServer {
             required: ['query'],
           },
         },
+        {
+          name: 'google_serp',
+          description: 'Get Google search results for a query with page limit',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              query: {
+                type: 'string',
+                description: 'Search query',
+              },
+              limit: {
+                type: 'number',
+                description: 'Maximum number of results to return (default: 10)',
+              },
+            },
+            required: ['query'],
+          },
+        },
+        {
+          name: 'google_map',
+          description: 'Get Google Maps data for a location query, optionally at specific coordinates',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              query: {
+                type: 'string',
+                description: 'Location search query',
+              },
+              location: {
+                type: 'string',
+                description: 'Optional location parameter. If in "latitude,longitude" format (e.g., "37.7749,-122.4194"), will search at those coordinates. Otherwise, will be added to the search query.',
+              },
+              limit: {
+                type: 'number',
+                description: 'Maximum number of results to return (default: 10)',
+              },
+            },
+            required: ['query'],
+          },
+        },
       ],
     }));
 
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
-
       try {
         const args = request.params.arguments ?? {};
         const url: any = args.url;
@@ -325,6 +367,30 @@ class MeerkatsServer {
                 },
               ],
               isError: false,
+            };
+          }
+          case 'google_serp': {
+            const result = await GoogleSerp(args);
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify(result),
+                },
+              ],
+              isError: !result.status,
+            };
+          }
+          case 'google_map': {
+            const result = await GoogleMap(args);
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify(result),
+                },
+              ],
+              isError: !result.status,
             };
           }
           default:
