@@ -14,7 +14,7 @@ import {
 } from './scraper/scraper.js';
 
 import catchAllController from './controllers/catchAll.controller.js';
-const { guessEmail, verifyEmail } = catchAllController;
+const { guessEmail, verifyEmail, isDomainCatchAll, domainMxRecords } = catchAllController;
 
 import logger from './utils/logger.js';
 
@@ -115,6 +115,34 @@ class MeerkatsServer {
             },
             required: ['firstName', 'lastName', 'domain'],
           },
+        },
+        {
+          name: 'CheckDomainCatchAll',
+          description: 'Check if a domain has a catch-all email address.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              domain: {
+                type: 'string',
+                description: 'Domain to check',
+              },
+            },
+            required: ['domain'],
+          }
+        },
+        {
+          name: 'GetMXforDomain',
+          description: 'get MX records for a domain.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              domain: {
+                type: 'string',
+                description: 'Domain to check',
+              },
+            },
+            required: ['domain'],
+          }
         },
         {
           name: 'scrape_url',
@@ -268,6 +296,32 @@ class MeerkatsServer {
                 {
                   type: 'text',
                   text: JSON.stringify(guessedEmail),
+                },
+              ],
+              isError: false,
+            };
+          }
+          case 'CheckDomainCatchAll': {
+            const domain = args.domain as string;
+            const result = await isDomainCatchAll(domain);
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify(result),
+                },
+              ],
+              isError: false,
+            };
+          }
+          case 'GetMXforDomain': {
+            const domain = args.domain as string;
+            const result = await domainMxRecords(domain);
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify(result),
                 },
               ],
               isError: false,
