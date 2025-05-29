@@ -191,8 +191,7 @@ export const GoogleMap = async (args: any) => {
         if (data && data.status === true && data.serpData) {
             return { 
                 status: true, 
-                result: data.serpData,
-                serpData: data.serpData
+                places: data.serpData,
             };
         } else if (data && data.status === false) {
             return { status: false, error: data.error };
