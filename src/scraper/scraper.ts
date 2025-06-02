@@ -55,34 +55,10 @@ export const scraperEngineCall = async (payload: ScrapeRequest, retry = 0): Prom
             timeout
         })
         .then(async (res: any) => {
-            const endTime = Date.now();
-            const diff = endTime - startTime;
-            logger.info('Scrape engine call time', diff / 1000);
-            logger.info(`Scrape engine call response`, res.status);
             return res.data;
-            // if (res.status == 200 && res.data) {
-            //     if (res.data.status === false && retry < 3) {
-            //         logger.info(`Scrape engine call response status false retrying`, retry);
-            //         await new Promise((resolve) => setTimeout(resolve, 5000));
-            //         return scraperEngineCall(payload, retry + 1);
-
-            //     }
-            //     const toreturn = {
-            //         ...res.data,
-            //         duration: diff / 1000
-            //     };
-            //     return toreturn;
-            // } else {
-            //     return {
-            //         duration: diff / 1000,
-            //         status: false,
-            //         error: formatError(ErrorCode.WEB_SCRAPING_FAILED, 'Error in scraping').error,
-            //         shouldRetry: true
-            //     };
-            // }
         })
         .catch(async (error: any) => {
-            const isForbidden = error?.response?.status === 403 || error?.response?.status === 429 || error?.response?.status === 503;
+            const isForbidden = error?.response?.status === 403 || error?.response?.status === 429 || error?.response?.status === 503 || error?.response?.status === 500;
             const errorCode = error?.response?.status;
             const errorText = error?.response?.statusText;
 
