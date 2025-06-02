@@ -54,7 +54,7 @@ class MeerkatsServer {
     this.server.setRequestHandler(ListToolsRequestSchema, async () => ({
       tools: [
         {
-          name: 'verifyEmail',
+          name: 'verify_email',
           description: 'Verify if an email address is valid and active using SMTP verification.',
           inputSchema: {
             type: 'object',
@@ -72,7 +72,7 @@ class MeerkatsServer {
           },
         },
         {
-          name: 'generateSupportEmails',
+          name: 'generate_support_emails',
           description: 'generate group of support email addresses are valid and active at a domain. Checks common group email patterns.',
           inputSchema: {
             type: 'object',
@@ -94,7 +94,7 @@ class MeerkatsServer {
           },
         },
         {
-          name: 'guessEmail',
+          name: 'guess_email',
           description: 'Guess an email address based on name and domain using common email patterns.',
           inputSchema: {
             type: 'object',
@@ -120,7 +120,7 @@ class MeerkatsServer {
           },
         },
         {
-          name: 'CheckDomainCatchAll',
+          name: 'check_domain_catch_all',
           description: 'Check if a domain has a catch-all email address.',
           inputSchema: {
             type: 'object',
@@ -134,7 +134,7 @@ class MeerkatsServer {
           }
         },
         {
-          name: 'GetMXforDomain',
+          name: 'get_mx_for_domain',
           description: 'get MX records for a domain.',
           inputSchema: {
             type: 'object',
@@ -287,7 +287,7 @@ class MeerkatsServer {
               isError: !result.status,
             };
           }
-          case 'verifyEmail': {
+          case 'verify_email': {
             const email = args.email as string;
             const fromEmail = (args.fromEmail as string) || "test@example.com"; // Provide a default value
             const isValid = await verifyEmail(email, fromEmail);
@@ -302,7 +302,7 @@ class MeerkatsServer {
               isError: false,
             };
           }
-          case 'generateSupportEmails': {
+          case 'generate_support_emails': {
             let emails: any = args.emails as string;
             emails = emails ? emails.split(',') : [];
             emails = emails.map((email: any) => email.trim());
@@ -326,7 +326,7 @@ class MeerkatsServer {
               isError: false,
             };
           }
-          case 'guessEmail': {
+          case 'guess_email': {
             const firstName = args.firstName as string;
             const lastName = args.lastName as string;
             const domain = args.domain as string;
@@ -343,7 +343,7 @@ class MeerkatsServer {
               isError: false,
             };
           }
-          case 'CheckDomainCatchAll': {
+          case 'check_domain_catch_all': {
             const domain = args.domain as string;
             const result = await isDomainCatchAll(domain);
             return {
@@ -356,7 +356,7 @@ class MeerkatsServer {
               isError: false,
             };
           }
-          case 'GetMXforDomain': {
+          case 'get_mx_for_domain': {
             const domain = args.domain as string;
             const result = await domainMxRecords(domain);
             return {
