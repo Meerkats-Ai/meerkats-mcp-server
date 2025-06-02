@@ -134,7 +134,7 @@ export const ScrapeUrlReturnMarkdown = async (url?: string, query?: string, wait
 export const WebSearch = async (query: string): Promise<any> => {
     query = (query ?? '').replace(/['"]/g, '');
     logger.info('query', query);
-    return ScrapeUrlReturnMarkdown('https://www.meerkats.ai', query, 0);
+    return ScrapeUrlReturnMarkdown('', query, 0);
 };
 
 // Function to scrape a URL (wrapper around scraperEngineCall)
