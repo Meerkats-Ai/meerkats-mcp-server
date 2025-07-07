@@ -53,7 +53,7 @@ class MeerkatsServer {
       tools: [
         {
           name: 'google_places',
-          description: 'Get Google Maps Places API data for a location lat,lng coordinates or zipcode within given radius',
+          description: 'Get Google Maps Places API data for a  search query',
           inputSchema: {
             type: 'object',
             properties: {
@@ -61,16 +61,8 @@ class MeerkatsServer {
                 type: 'string',
                 description: 'search query',
               },
-              location: {
-                type: 'string',
-                description: 'location parameter. Can be in "latitude,longitude" format (e.g., "37.7749,-122.4194") or a zipcode.',
-              },
-              radius: {
-                type: 'number',
-                description: 'Search radius in meters (default: 10000)'
-              },
             },
-              required: ['query', 'location', 'radius'],
+              required: ['query'],
           },
         },
         {
@@ -414,7 +406,6 @@ class MeerkatsServer {
             };
           }
           case 'google_places': {
-            console.log(args)
             const result = await GoogleMapPlaces(args);
             return {
               content: [
