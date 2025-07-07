@@ -15,6 +15,10 @@ export enum ErrorCode {
   
   // Configuration errors
   INVALID_CONFIG = 'INVALID_CONFIG',
+  CONFIGURATION_ERROR = 'CONFIGURATION_ERROR',
+  
+  // API related errors
+  API_REQUEST_FAILED = 'API_REQUEST_FAILED',
   
   // General errors
   GENERAL_ERROR = 'GENERAL_ERROR',

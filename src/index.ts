@@ -12,11 +12,10 @@ import {
   ScrapeUrlReturnMarkdown,
   WebSearch,
 } from './scraper/scraper.js';
-
 import catchAllController from './controllers/catchAll.controller.js';
 const { guessEmail, verifyEmail, isDomainCatchAll, domainMxRecords } = catchAllController;
 
-import googleController from './controllers/google.controller.js';
+import googleController, { GoogleMapPlaces } from './controllers/google.controller.js';
 const { GoogleSerp, GoogleMap } = googleController;
 
 import logger from './utils/logger.js';
@@ -49,10 +48,31 @@ class MeerkatsServer {
       process.exit(0);
     });
   }
-
   private setupToolHandlers() {
     this.server.setRequestHandler(ListToolsRequestSchema, async () => ({
       tools: [
+        {
+          name: 'google_places',
+          description: 'Get Google Maps Places API data for a location lat,lng coordinates or zipcode within given radius',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              query: {
+                type: 'string',
+                description: 'search query',
+              },
+              location: {
+                type: 'string',
+                description: 'location parameter. Can be in "latitude,longitude" format (e.g., "37.7749,-122.4194") or a zipcode.',
+              },
+              radius: {
+                type: 'number',
+                description: 'Search radius in meters (default: 10000)'
+              },
+            },
+              required: ['query', 'location', 'radius'],
+          },
+        },
         {
           name: 'verify_email',
           description: 'Verify if an email address is valid and active using SMTP verification.',
@@ -383,6 +403,19 @@ class MeerkatsServer {
           }
           case 'google_map': {
             const result = await GoogleMap(args);
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify(result),
+                },
+              ],
+              isError: !result.status,
+            };
+          }
+          case 'google_places': {
+            console.log(args)
+            const result = await GoogleMapPlaces(args);
             return {
               content: [
                 {
