@@ -42,8 +42,6 @@ export const scraperEngineCall = async (payload: ScrapeRequest, retry = 0): Prom
     const apiUrl = `${connectionsObj.SCRAPPER_API_URL}/api/scraper/scrape`;
     const startTime = Date.now();
     const timeout = shouldApplyTimeout ? 65000 : 300000;
-    logger.info('Timeout set to', { timeout });
-    logger.info('Scrape engine call payload', payload);
     return axios
         .post(apiUrl, payload, {
             headers: {
@@ -99,6 +97,9 @@ export const ScrapeUrlReturnMarkdown = async (url?: string, query?: string, wait
 
         const engineResult: ScrapeResult = await scraperEngineCall(payload);
         if (engineResult.status === false) {
+            if(engineResult.error === 'NS_ERROR_PROXY_CONNECTION_REFUSED') {
+                engineResult.error = `SYSTEM_ERROR: ${engineResult.error}`
+            }
             return engineResult;
         }
 

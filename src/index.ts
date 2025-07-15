@@ -289,6 +289,17 @@ class MeerkatsServer {
           }
           case 'web_search': {
             const result = await WebSearch(query);
+            if(!result.status) {
+              return {
+                content: [
+                  {
+                    type: 'text',
+                    text: result.error || 'No search results found',
+                  },
+                ],
+                isError: true,
+              };
+            }
             return {
               content: [
                 {
