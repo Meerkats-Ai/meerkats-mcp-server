@@ -56,12 +56,12 @@ export const scraperEngineCall = async (payload: ScrapeRequest, retry = 0): Prom
             return res.data;
         })
         .catch(async (error: any) => {
-            const isForbidden = error?.response?.status === 403 || error?.response?.status === 429 || error?.response?.status === 503 || error?.response?.status === 500;
+            const isForbidden = error?.response?.status === 403 || error?.response?.status === 429 || error?.response?.status === 503 || error?.response?.status === 500 || error?.response?.status === 502
             const errorCode = error?.response?.status;
             const errorText = error?.response?.statusText;
 
-            logger.info(`Scrape engine call response`, { errorCode, errorText, isForbidden, retry });
-            if (isForbidden && retry < 3) {
+            logger.info(`Scrape engine call response, ${JSON.stringify({ errorCode, errorText, isForbidden, retry }, null, 2)}`);
+            if ((isForbidden || !errorCode) && retry < 3 ) {
                 logger.info(`Scrape engine call response isForbidden`);
                 await new Promise((resolve) => setTimeout(resolve, 10000));
                 return scraperEngineCall(payload, retry + 1);
@@ -134,7 +134,6 @@ export const ScrapeUrlReturnMarkdown = async (url?: string, query?: string, wait
 // Function to search Google using the Meerkats agent
 export const WebSearch = async (query: string): Promise<any> => {
     query = (query ?? '').replace(/['"]/g, '');
-    logger.info('query', query);
     return ScrapeUrlReturnMarkdown('', query, 0);
 };
 

@@ -271,7 +271,6 @@ class MeerkatsServer {
         const args = request.params.arguments ?? {};
         const url: any = args.url;
         const query: any = args.query;
-        logger.info(`Executing tool:`, args);
         switch (request.params.name) {
           case 'scrape_url': {
             let wait: any = args.wait
@@ -452,7 +451,7 @@ class MeerkatsServer {
   async run() {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
-    logger.info('Meerkats.ai MCP server running on stdio');
+    logger.info('Meerkats.ai MCP server running on stdio2 protocol');
   }
 }
 
