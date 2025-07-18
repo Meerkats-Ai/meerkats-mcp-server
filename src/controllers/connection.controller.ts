@@ -4,9 +4,9 @@
 // In a real application, this would likely connect to a database or config service
 const systemConnections: Record<string, string> = {
   // SCRAPPER_CALLBACK_API_URL: process.env.SCRAPPER_CALLBACK_API_URL || 'https://prod-api-126608443486.us-central1.run.app',
-  SCRAPPER_CALLBACK_API_URL: 'https://cs.meerkats.ai',
+  SCRAPPER_CALLBACK_API_URL: 'https://crawlee-scrapper-126608443486.us-central1.run.app',
   // SCRAPPER_API_URL: process.env.SCRAPPER_API_URL || 'https://prod-scrapper-126608443486.us-central1.run.app',
-  SCRAPPER_API_URL: 'https://cs.meerkats.ai',
+  SCRAPPER_API_URL: 'https://crawlee-scrapper-126608443486.us-central1.run.app',
   MEERKATS_API_KEY: process.env.MEERKATS_API_KEY || ''
 };
 
